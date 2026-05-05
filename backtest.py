@@ -50,6 +50,7 @@ class Backtest:
         initial_capital: float = 100_000.0,
         debate_rounds: int = DEBATE_ROUNDS,
         verbose: bool = True,
+        logger_func: callable = print,
     ) -> None:
         self.symbol = symbol.upper()
         self.start = pd.to_datetime(start_date)
@@ -57,6 +58,7 @@ class Backtest:
         self.initial_capital = initial_capital
         self.debate_rounds = debate_rounds
         self.verbose = verbose
+        self.logger = logger_func
 
         # Runtime state
         self.state = SharedState()
@@ -73,7 +75,13 @@ class Backtest:
         )
         if df.empty:
             raise ValueError(f"No price data returned for {self.symbol} in the requested range.")
-        return df["Close"].squeeze().dropna()
+        
+        # Ensure we always have a Series, even if it's 1 row
+        prices = df["Close"]
+        if isinstance(prices, pd.DataFrame):
+            prices = prices.iloc[:, 0]
+        
+        return prices.dropna()
 
     def run(self) -> pd.Series:
         """Execute the backtest. Returns a pd.Series of daily portfolio values."""
@@ -87,9 +95,9 @@ class Backtest:
             price = float(price)
 
             if self.verbose:
-                print(f"\n{'='*60}")
-                print(f"  📅 {date_str} | Price: ${price:.2f}")
-                print(f"{'='*60}")
+                self.logger(f"\n{'='*40}")
+                self.logger(f"[DATE] {date_str} | Price: ${price:.2f}")
+                self.logger(f"{'='*40}")
 
             # 1. Analyst Team (with memory from prior days)
             past_reports = self.state.get_recent_analyst_reports(self.symbol, days=3)
@@ -97,20 +105,20 @@ class Backtest:
             self.state.add_analyst_report(self.symbol, date_str, reports)
 
             if self.verbose:
-                print(f"  📊 Technical: {reports['technical']}")
-                print(f"  📰 Sentiment score: {reports['sentiment'].get('score', 'N/A')}")
+                self.logger(f"[TECH] Price ${reports['technical'].get('price')}, RSI {reports['technical'].get('RSI_14')}")
+                self.logger(f"[SENT] score: {reports['sentiment'].get('score', 'N/A')}")
 
             # 2. Multi-round Bull/Bear Debate
             debate_summary = multi_round_debate(
                 reports, self.state, self.symbol, date_str, rounds=self.debate_rounds
             )
             if self.verbose:
-                print(f"  ⚖️  Debate verdict: {debate_summary[:120]}...")
+                self.logger(f"[DEBATE] Verdict: {debate_summary[:150]}...")
 
             # 3. Trader proposes a trade
             trade_proposal = TraderAgent(debate_summary).propose()
             if self.verbose:
-                print(f"  🤖 Trader proposes: {trade_proposal}")
+                self.logger(f"[TRADE] Action: {trade_proposal.get('action')} ({trade_proposal.get('percentage')}%)")
 
             # 4. Risk manager scales the position
             risk_factor = RiskManager(trade_proposal).adjust()
@@ -118,7 +126,7 @@ class Backtest:
             # 5. Fund manager finalizes
             decision = FundManager(trade_proposal, risk_factor).decide()
             if self.verbose:
-                print(f"  💼 Final decision: {decision}")
+                self.logger(f"[FINAL] {decision.get('action')} at {decision.get('executed_percentage')}%")
             self.state.add_trade_decision(self.symbol, date_str, decision)
 
             # 6. Execute trade

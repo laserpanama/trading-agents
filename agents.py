@@ -23,9 +23,21 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from config import FINNHUB_API_KEY, LLM_MODEL, OPENAI_API_KEY, DEBATE_ROUNDS
 from state import SharedState
 
+# Provider switching (OpenAI or Groq)
+import os
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").lower()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+
 # ── Clients ───────────────────────────────────────────────────────────────────
 
-_openai_client = OpenAI(api_key=OPENAI_API_KEY)
+if LLM_PROVIDER == "groq":
+    _openai_client = OpenAI(
+        api_key=GROQ_API_KEY,
+        base_url="https://api.groq.com/openai/v1"
+    )
+else:
+    _openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
 _finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY) if FINNHUB_API_KEY else None
 _vader = SentimentIntensityAnalyzer()
 

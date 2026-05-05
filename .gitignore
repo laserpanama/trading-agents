@@ -1,4 +1,7 @@
+# Environment & secrets
 .env
+
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -6,6 +9,24 @@ __pycache__/
 venv/
 dist/
 build/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+
+# Logs & data
 *.log
+logs/
+
+# Docker
+postgres_data/
+redis_data/

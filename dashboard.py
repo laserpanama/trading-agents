@@ -63,7 +63,7 @@ st.divider()
 with st.sidebar:
     st.image(
         "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Candlestick_chart_scheme_02-en.svg/200px-Candlestick_chart_scheme_02-en.svg.png",
-        use_column_width=True,
+        use_container_width=True,
     )
     st.header("⚙️ Backtest Configuration")
 
@@ -123,6 +123,17 @@ Portfolio Execution
 
 progress_bar = st.progress(0, text="Initializing agents…")
 
+# Console for verbose output
+if verbose:
+    st.subheader("🕵️ Agent Terminal")
+    console_out = st.empty()
+    log_stream = []
+
+    def stream_logger(msg):
+        log_stream.append(msg)
+        # Keep only last 15 lines for readability
+        console_out.code("\n".join(log_stream[-15:]))
+
 with st.spinner(f"Running TradingAgents for **{symbol}** ({start_date} → {end_date})…"):
     try:
         bt = Backtest(
@@ -132,6 +143,7 @@ with st.spinner(f"Running TradingAgents for **{symbol}** ({start_date} → {end_
             initial_capital=float(capital),
             debate_rounds=debate_rounds,
             verbose=verbose,
+            logger_func=stream_logger if verbose else print,
         )
         portfolio = bt.run()
         metrics = bt.metrics()
