@@ -2,7 +2,7 @@
 agents.py – All LLM-powered agents + market data tools.
 
 Agent pipeline:
-  AnalystTeam  →  multi_round_debate  →  TraderAgent  →  RiskManager  →  FundManager
+  AnalystTeam  ->  multi_round_debate  ->  TraderAgent  ->  RiskManager  ->  FundManager
 
 Each agent writes structured dicts (not raw text) to SharedState to prevent
 information decay across the pipeline ("telephone effect").
@@ -28,7 +28,7 @@ import os
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").lower()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
-# ── Clients ───────────────────────────────────────────────────────────────────
+# -- Clients -------------------------------------------------------------------
 
 if LLM_PROVIDER == "groq":
     _openai_client = OpenAI(
@@ -42,7 +42,7 @@ _finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY) if FINNHUB_API_KEY els
 _vader = SentimentIntensityAnalyzer()
 
 
-# ── LLM helper ────────────────────────────────────────────────────────────────
+# -- LLM helper ----------------------------------------------------------------
 
 def call_llm(
     system: str,
@@ -70,7 +70,7 @@ def call_llm(
     return "Error: LLM call failed after retries."
 
 
-# ── Market data tools ─────────────────────────────────────────────────────────
+# -- Market data tools ---------------------------------------------------------
 
 def get_technical_indicators(symbol: str, lookback_days: int = 60) -> Dict:
     """Return price, SMA-20, RSI-14 for the most recent trading day."""
@@ -136,7 +136,7 @@ def get_fundamentals(symbol: str) -> Dict:
         return {"error": str(exc)}
 
 
-# ── Analyst Team ──────────────────────────────────────────────────────────────
+# -- Analyst Team --------------------------------------------------------------
 
 class AnalystTeam:
     """
@@ -179,7 +179,7 @@ class AnalystTeam:
         return raw
 
 
-# ── Multi-round Bull vs Bear Debate ───────────────────────────────────────────
+# -- Multi-round Bull vs Bear Debate -------------------------------------------
 
 def multi_round_debate(
     reports: Dict,
@@ -226,7 +226,7 @@ def multi_round_debate(
     return final_summary
 
 
-# ── Trader Agent ──────────────────────────────────────────────────────────────
+# -- Trader Agent --------------------------------------------------------------
 
 class TraderAgent:
     """Converts a debate summary into a structured trade proposal (JSON)."""
@@ -251,7 +251,7 @@ class TraderAgent:
             return {"action": "hold", "percentage": 0}
 
 
-# ── Risk Manager ──────────────────────────────────────────────────────────────
+# -- Risk Manager --------------------------------------------------------------
 
 class RiskManager:
     """Reviews a trade proposal and returns a position-size adjustment factor."""
@@ -274,7 +274,7 @@ class RiskManager:
             return 1.0
 
 
-# ── Fund Manager ──────────────────────────────────────────────────────────────
+# -- Fund Manager --------------------------------------------------------------
 
 class FundManager:
     """Applies the risk factor and issues the final executable trade decision."""

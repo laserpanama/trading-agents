@@ -67,7 +67,7 @@ class Backtest:
         self.trades: list[tuple] = []  # (date_str, action, shares, price)
         self.portfolio_series: pd.Series | None = None
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # -- Public API ------------------------------------------------------------
 
     def fetch_prices(self) -> pd.Series:
         df = yf.download(
@@ -170,7 +170,7 @@ class Backtest:
     def trades_df(self) -> pd.DataFrame:
         return pd.DataFrame(self.trades, columns=["Date", "Action", "Shares", "Price"])
 
-    # ── Private ───────────────────────────────────────────────────────────────
+    # -- Private ---------------------------------------------------------------
 
     def _execute(self, decision: dict, price: float, date_str: str) -> None:
         action = decision.get("action", "hold")
@@ -183,7 +183,7 @@ class Backtest:
             self.cash -= invest
             self.trades.append((date_str, "BUY", round(shares, 4), round(price, 2)))
             if self.verbose:
-                print(f"  ✅ BUY {shares:.4f} shares @ ${price:.2f} (${invest:.2f})")
+                print(f"  [BUY] {shares:.4f} shares @ ${price:.2f} (${invest:.2f})")
 
         elif action == "sell" and pct > 0 and self.positions > 0:
             shares_to_sell = self.positions * pct
@@ -192,8 +192,8 @@ class Backtest:
             self.cash += proceeds
             self.trades.append((date_str, "SELL", round(shares_to_sell, 4), round(price, 2)))
             if self.verbose:
-                print(f"  🔴 SELL {shares_to_sell:.4f} shares @ ${price:.2f} (${proceeds:.2f})")
+                print(f"  [SELL] {shares_to_sell:.4f} shares @ ${price:.2f} (${proceeds:.2f})")
 
         else:
             if self.verbose:
-                print(f"  ⏸️  HOLD")
+                print(f"  [HOLD]")

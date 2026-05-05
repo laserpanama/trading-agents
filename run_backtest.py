@@ -22,9 +22,9 @@ def main() -> None:
     parser.add_argument("--quiet", action="store_true", help="Suppress verbose agent output")
     args = parser.parse_args()
 
-    print(f"\n🤖 TradingAgents Backtest")
+    print("\n[TradingAgents Backtest]")
     print(f"   Symbol : {args.symbol}")
-    print(f"   Period : {args.start} → {args.end}")
+    print(f"   Period : {args.start} -> {args.end}")
     print(f"   Capital: ${args.capital:,.0f}")
     print(f"   Rounds : {args.rounds}\n")
 
@@ -40,7 +40,7 @@ def main() -> None:
     metrics = bt.metrics()
 
     print("\n" + "=" * 50)
-    print("  📊 PERFORMANCE METRICS")
+    print("  PERFORMANCE METRICS")
     print("=" * 50)
     for k, v in metrics.items():
         print(f"  {k:<30} {v}")
@@ -48,7 +48,7 @@ def main() -> None:
     print(f"  Trades executed: {len(bt.trades)}")
 
     if bt.trades:
-        print("\n  📋 Trade Log:")
+        print("\n  Trade Log:")
         for t in bt.trades:
             print(f"    {t[0]}  {t[1]:4s}  {t[2]:.4f} shares @ ${t[3]:.2f}")
 
