@@ -16,6 +16,7 @@ from typing import Dict, List, Optional
 
 import finnhub
 import numpy as np
+import pandas as pd
 import yfinance as yf
 from openai import OpenAI
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -72,9 +73,9 @@ def call_llm(
 
 # -- Market data tools ---------------------------------------------------------
 
-def get_technical_indicators(symbol: str, lookback_days: int = 60) -> Dict:
-    """Return price, SMA-20, RSI-14 for the most recent trading day."""
-    end = datetime.now()
+def get_technical_indicators(symbol: str, reference_date: Optional[datetime] = None, lookback_days: int = 60) -> Dict:
+    """Return price, SMA-20, RSI-14 for the day closest to reference_date."""
+    end = reference_date or datetime.now()
     start = end - timedelta(days=lookback_days)
     df = yf.download(symbol, start=start, end=end, progress=False, auto_adjust=True)
     if df.empty:
@@ -96,13 +97,15 @@ def get_technical_indicators(symbol: str, lookback_days: int = 60) -> Dict:
     }
 
 
-def get_news_sentiment(symbol: str, days_back: int = 7) -> Dict:
-    """Return average VADER sentiment score for recent company news headlines."""
+def get_news_sentiment(symbol: str, reference_date: Optional[datetime] = None, days_back: int = 7) -> Dict:
+    """Return average VADER sentiment score for news headlines leading up to reference_date."""
     if _finnhub_client is None:
         return {"score": 0.0, "headlines": [], "note": "Finnhub key not configured."}
 
-    end_str = datetime.now().strftime("%Y-%m-%d")
-    start_str = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+    end = reference_date or datetime.now()
+    start = end - timedelta(days=days_back)
+    end_str = end.strftime("%Y-%m-%d")
+    start_str = start.strftime("%Y-%m-%d")
     try:
         news = _finnhub_client.company_news(symbol, _from=start_str, to=end_str)
         headlines = [n["headline"] for n in (news or [])[:8]]
@@ -144,14 +147,15 @@ class AnalystTeam:
     Optionally includes recent memory (past reports) in its summary prompt.
     """
 
-    def __init__(self, symbol: str, memory: Optional[List[Dict]] = None) -> None:
+    def __init__(self, symbol: str, reference_date: Optional[str] = None, memory: Optional[List[Dict]] = None) -> None:
         self.symbol = symbol
+        self.reference_date = pd.to_datetime(reference_date) if reference_date else datetime.now()
         self.memory = memory or []
 
     def reports(self) -> Dict:
-        tech = get_technical_indicators(self.symbol)
-        sent = get_news_sentiment(self.symbol)
-        fund = get_fundamentals(self.symbol)
+        tech = get_technical_indicators(self.symbol, reference_date=self.reference_date)
+        sent = get_news_sentiment(self.symbol, reference_date=self.reference_date)
+        fund = get_fundamentals(self.symbol)  # Fundamentals are harder to get historically via free tier, keeping current for now
 
         # Build memory context if available
         memory_ctx = ""

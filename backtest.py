@@ -101,7 +101,7 @@ class Backtest:
 
             # 1. Analyst Team (with memory from prior days)
             past_reports = self.state.get_recent_analyst_reports(self.symbol, days=3)
-            reports = AnalystTeam(self.symbol, memory=past_reports).reports()
+            reports = AnalystTeam(self.symbol, reference_date=date_str, memory=past_reports).reports()
             self.state.add_analyst_report(self.symbol, date_str, reports)
 
             if self.verbose:
